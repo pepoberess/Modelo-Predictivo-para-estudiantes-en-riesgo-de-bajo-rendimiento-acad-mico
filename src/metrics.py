@@ -37,6 +37,20 @@ def print_metrics(y_true, y_pred, title="Metrics"):
     print(f"Recall: {rec:.4f}")
     print(f"F1 Score: {f1:.4f}")
 
+def print_metrics_multiclass(y_true, y_pred, classes, class_names, title="Metrics"):
+    print(f"\n{title}")
+    print(f"{'Clase':<15} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>10}")
+    print("-" * 55)
+    for c in classes:
+        y_true_b = (y_true == c).astype(int)
+        y_pred_b = (y_pred == c).astype(int)
+        acc = accuracy(y_true_b, y_pred_b)
+        prec = precision(y_true_b, y_pred_b)
+        rec = recall(y_true_b, y_pred_b)
+        f1 = f1_score(y_true_b, y_pred_b)
+        name = class_names.get(c, str(c))
+        print(f"{name:<15} {acc:>10.4f} {prec:>10.4f} {rec:>10.4f} {f1:>10.4f}")
+
 def roc_curve(y_true, y_prob):
     """Compute ROC curve (FPR, TPR) and AUC using numpy."""
     thresholds = np.linspace(0, 1, 300)
@@ -52,7 +66,7 @@ def roc_curve(y_true, y_prob):
     # sort by FPR for AUC calculation
     order = np.argsort(fprs)
     fprs, tprs = fprs[order], tprs[order]
-    auc = np.trapz(tprs, fprs)
+    auc = np.trapezoid(tprs, fprs)
     return fprs, tprs, auc
  
 def pr_curve(y_true, y_prob):
@@ -70,5 +84,23 @@ def pr_curve(y_true, y_prob):
     # sort by recall for AUC calculation
     order = np.argsort(recalls)
     recalls, precisions = recalls[order], precisions[order]
-    auc = np.trapz(precisions, recalls)
+    auc = np.trapezoid(precisions, recalls)
     return precisions, recalls, auc
+
+def roc_curve_multiclass(y_true, y_prob, classes):
+    """One-vs-all ROC curve per class. y_prob shape: (n_samples, n_classes)"""
+    curves = {}
+    for i, c in enumerate(classes):
+        y_true_b = (y_true == c).astype(int)
+        fprs, tprs, auc = roc_curve(y_true_b, y_prob[:, i])
+        curves[c] = (fprs, tprs, auc)
+    return curves
+
+def pr_curve_multiclass(y_true, y_prob, classes):
+    """One-vs-all PR curve per class. y_prob shape: (n_samples, n_classes)"""
+    curves = {}
+    for i, c in enumerate(classes):
+        y_true_b = (y_true == c).astype(int)
+        precisions, recalls, auc = pr_curve(y_true_b, y_prob[:, i])
+        curves[c] = (precisions, recalls, auc)
+    return curves

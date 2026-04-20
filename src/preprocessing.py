@@ -77,6 +77,14 @@ def adjust_nulls(train, val, data_test=None):
         return train, val, data_test
     else:
         return train, val
+    
+def preprocess(train, val, features):
+    train, val = nulls_nota_previa(train, val)
+    train, val = adjust_nulls(train, val)
+    train, statistics = normalize_train(train, features)
+    val = normalize_val_test(val, features, statistics)
+    train, val = one_hot_encoder2(train, val)
+    return train, val
 
 
 def one_hot_encoder_school(data1, data2, data3):
